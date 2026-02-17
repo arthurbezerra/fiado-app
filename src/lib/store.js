@@ -119,7 +119,7 @@ const SETTINGS_KEY = 'fiado_app_settings'
 
 export function getSettings() {
   const raw = localStorage.getItem(SETTINGS_KEY)
-  return raw ? JSON.parse(raw) : { chavePix: '' }
+  return raw ? JSON.parse(raw) : { chavePix: '', nomeLoja: '', cidade: '' }
 }
 
 export function saveSettings(settings) {

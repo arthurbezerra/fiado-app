@@ -29,7 +29,18 @@ export function getAvatarColor(name) {
   return avatarColors[Math.abs(hash) % avatarColors.length]
 }
 
-export function buildWhatsAppMessage(nome, totalAberto, openDebts = [], chavePix = '') {
+export function buildPaymentLink(customer, totalAberto, settings) {
+  const params = new URLSearchParams({
+    nome: customer.nome,
+    valor: totalAberto.toFixed(2),
+    pix: settings.chavePix,
+    loja: settings.nomeLoja || 'Fiado',
+    cidade: settings.cidade || 'Brasil',
+  })
+  return `${window.location.origin}/pagar?${params.toString()}`
+}
+
+export function buildWhatsAppMessage(nome, totalAberto, openDebts = [], paymentLink = '') {
   const firstName = nome.split(' ')[0]
   const valor = formatCurrency(totalAberto)
 
@@ -46,8 +57,8 @@ export function buildWhatsAppMessage(nome, totalAberto, openDebts = [], chavePix
     msg += `\nTotal: *${valor}*`
   }
 
-  if (chavePix) {
-    msg += `\n\nPode pagar via Pix 🔑\nChave: *${chavePix}*`
+  if (paymentLink) {
+    msg += `\n\n👇 Pague agora pelo link:\n${paymentLink}`
   }
 
   msg += `\n\nQualquer dúvida é só me chamar. Obrigado(a) pela preferência! 🙏`

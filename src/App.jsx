@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
 import CustomerDetail from './pages/CustomerDetail'
 import Settings from './pages/Settings'
+import PagamentoPage from './pages/PagamentoPage'
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         }}
       />
       <Routes>
+        <Route path="/pagar" element={<PagamentoPage />} />
         <Route element={<Layout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/clientes" element={<Customers />} />

@@ -29,15 +29,30 @@ export function getAvatarColor(name) {
   return avatarColors[Math.abs(hash) % avatarColors.length]
 }
 
-export function buildWhatsAppMessage(nome, totalAberto) {
+export function buildWhatsAppMessage(nome, totalAberto, openDebts = [], chavePix = '') {
   const firstName = nome.split(' ')[0]
   const valor = formatCurrency(totalAberto)
-  return (
-    `Oi ${firstName}, tudo bem? 😊\n\n` +
-    `Passando aqui pra lembrar que você tem um saldo em aberto de ${valor} aqui na nossa lojinha.\n\n` +
-    `Quando puder, pode acertar via Pix! Qualquer dúvida é só me chamar.\n\n` +
-    `Obrigado(a) pela preferência! 🙏`
-  )
+
+  let msg = `Oi ${firstName}, tudo bem? 😊\n\n`
+  msg += `Passando aqui pra lembrar que você tem um saldo em aberto aqui na nossa lojinha.\n`
+
+  if (openDebts.length > 0) {
+    msg += `\n`
+    for (const d of openDebts) {
+      msg += `• ${d.descricao}: ${formatCurrency(d.valor)}\n`
+    }
+    msg += `\nTotal: *${valor}*`
+  } else {
+    msg += `\nTotal: *${valor}*`
+  }
+
+  if (chavePix) {
+    msg += `\n\nPode pagar via Pix 🔑\nChave: *${chavePix}*`
+  }
+
+  msg += `\n\nQualquer dúvida é só me chamar. Obrigado(a) pela preferência! 🙏`
+
+  return msg
 }
 
 export function buildWhatsAppUrl(telefone, message) {

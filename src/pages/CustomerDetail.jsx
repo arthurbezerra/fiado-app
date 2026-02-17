@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getCustomer, addDebt, markDebtPaid } from '../lib/store'
+import { getCustomer, addDebt, markDebtPaid, deleteDebt, deleteCustomer } from '../lib/store'
 import { formatCurrency, formatDate } from '../lib/utils'
 import Avatar from '../components/Avatar'
 import CobrancaModal from '../components/CobrancaModal'
@@ -27,9 +27,8 @@ export default function CustomerDetail() {
     )
   }
 
-  const totalAberto = customer.dividas
-    .filter((d) => !d.pago)
-    .reduce((sum, d) => sum + d.valor, 0)
+  const openDebts = customer.dividas.filter((d) => !d.pago)
+  const totalAberto = openDebts.reduce((sum, d) => sum + d.valor, 0)
   const totalPago = customer.dividas
     .filter((d) => d.pago)
     .reduce((sum, d) => sum + d.valor, 0)
@@ -49,6 +48,20 @@ export default function CustomerDetail() {
     markDebtPaid(id, debtId)
     setCustomer(getCustomer(id))
     toast.success('Marcado como pago!')
+  }
+
+  function handleDeleteDebt(debtId) {
+    if (!window.confirm('Excluir este lançamento?')) return
+    deleteDebt(id, debtId)
+    setCustomer(getCustomer(id))
+    toast.success('Lançamento excluído.')
+  }
+
+  function handleDeleteCustomer() {
+    if (!window.confirm(`Excluir o cliente "${customer.nome}" e todo o histórico? Esta ação não pode ser desfeita.`)) return
+    deleteCustomer(id)
+    toast.success('Cliente excluído.')
+    navigate('/clientes')
   }
 
   const sortedDebts = [...customer.dividas].sort(
@@ -174,16 +187,35 @@ export default function CustomerDetail() {
                     Pagar
                   </button>
                 )}
+                <button
+                  onClick={() => handleDeleteDebt(d.id)}
+                  className="text-text-light hover:text-danger transition-colors shrink-0 text-lg leading-none ml-1"
+                  title="Excluir lançamento"
+                >
+                  &times;
+                </button>
               </div>
             ))}
           </div>
         )}
       </div>
 
+      {/* Danger Zone */}
+      <div className="border border-danger/20 rounded-xl p-4">
+        <h3 className="text-sm font-bold text-danger mb-2">Zona de perigo</h3>
+        <button
+          onClick={handleDeleteCustomer}
+          className="text-sm font-bold text-danger hover:bg-danger/10 px-3 py-2 rounded-lg transition-colors"
+        >
+          Excluir cliente
+        </button>
+      </div>
+
       {showCobranca && (
         <CobrancaModal
           customer={customer}
           totalAberto={totalAberto}
+          openDebts={openDebts}
           onClose={() => setShowCobranca(false)}
         />
       )}

@@ -97,3 +97,31 @@ export function getTopDebtors() {
     .filter((c) => c.totalAberto > 0)
     .sort((a, b) => b.totalAberto - a.totalAberto)
 }
+
+export function deleteDebt(customerId, debtId) {
+  const customers = load()
+  const customer = customers.find((c) => c.id === customerId)
+  if (!customer) return false
+  customer.dividas = customer.dividas.filter((d) => d.id !== debtId)
+  save(customers)
+  return true
+}
+
+export function deleteCustomer(customerId) {
+  const customers = load()
+  const filtered = customers.filter((c) => c.id !== customerId)
+  if (filtered.length === customers.length) return false
+  save(filtered)
+  return true
+}
+
+const SETTINGS_KEY = 'fiado_app_settings'
+
+export function getSettings() {
+  const raw = localStorage.getItem(SETTINGS_KEY)
+  return raw ? JSON.parse(raw) : { chavePix: '' }
+}
+
+export function saveSettings(settings) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+}

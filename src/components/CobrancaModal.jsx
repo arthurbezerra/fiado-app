@@ -1,7 +1,9 @@
+import { getSettings } from '../lib/store'
 import { buildWhatsAppMessage, buildWhatsAppUrl, formatCurrency } from '../lib/utils'
 
-export default function CobrancaModal({ customer, totalAberto, onClose }) {
-  const message = buildWhatsAppMessage(customer.nome, totalAberto)
+export default function CobrancaModal({ customer, totalAberto, openDebts = [], onClose }) {
+  const { chavePix } = getSettings()
+  const message = buildWhatsAppMessage(customer.nome, totalAberto, openDebts, chavePix)
   const url = buildWhatsAppUrl(customer.telefone, message)
 
   return (
@@ -28,6 +30,16 @@ export default function CobrancaModal({ customer, totalAberto, onClose }) {
           <div className="bg-bg rounded-xl p-4 mb-5 text-sm text-text whitespace-pre-wrap leading-relaxed">
             {message}
           </div>
+
+          {!chavePix && (
+            <p className="text-xs text-text-light mb-4">
+              💡 Adicione sua chave Pix em{' '}
+              <a href="/configuracoes" className="text-accent font-semibold hover:underline">
+                Configurações
+              </a>{' '}
+              para incluí-la na mensagem.
+            </p>
+          )}
 
           <a
             href={url}

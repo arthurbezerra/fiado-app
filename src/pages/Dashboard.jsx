@@ -65,6 +65,7 @@ export default function Dashboard() {
         <CobrancaModal
           customer={cobranca}
           totalAberto={cobranca.totalAberto}
+          openDebts={cobranca.dividas.filter((d) => !d.pago)}
           onClose={() => setCobranca(null)}
         />
       )}

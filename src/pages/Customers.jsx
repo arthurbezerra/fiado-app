@@ -10,6 +10,7 @@ export default function Customers() {
   const [showForm, setShowForm] = useState(false)
   const [nome, setNome] = useState('')
   const [telefone, setTelefone] = useState('')
+  const [search, setSearch] = useState('')
 
   function handleAdd(e) {
     e.preventDefault()
@@ -21,6 +22,13 @@ export default function Customers() {
     setShowForm(false)
     toast.success('Cliente adicionado!')
   }
+
+  const filtered = search.trim()
+    ? customers.filter((c) =>
+        c.nome.toLowerCase().includes(search.toLowerCase()) ||
+        c.telefone.includes(search.replace(/\D/g, ''))
+      )
+    : customers
 
   return (
     <div className="space-y-6">
@@ -60,35 +68,47 @@ export default function Customers() {
         </form>
       )}
 
-      <div className="space-y-2">
-        {customers.map((c) => {
-          const totalAberto = c.dividas
-            .filter((d) => !d.pago)
-            .reduce((sum, d) => sum + d.valor, 0)
+      <input
+        type="search"
+        placeholder="Buscar cliente..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-card shadow-sm"
+      />
 
-          return (
-            <Link
-              key={c.id}
-              to={`/clientes/${c.id}`}
-              className="bg-card rounded-xl p-4 shadow-sm flex items-center gap-3 block"
-            >
-              <Avatar nome={c.nome} />
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-text truncate">{c.nome}</p>
-                <p className="text-xs text-text-light">{c.telefone}</p>
-              </div>
-              {totalAberto > 0 ? (
-                <span className="text-sm font-bold text-danger">
-                  {formatCurrency(totalAberto)}
-                </span>
-              ) : (
-                <span className="text-xs font-bold text-success bg-success/10 px-2 py-1 rounded-full">
-                  Em dia
-                </span>
-              )}
-            </Link>
-          )
-        })}
+      <div className="space-y-2">
+        {filtered.length === 0 ? (
+          <p className="text-text-light text-sm">Nenhum cliente encontrado.</p>
+        ) : (
+          filtered.map((c) => {
+            const totalAberto = c.dividas
+              .filter((d) => !d.pago)
+              .reduce((sum, d) => sum + d.valor, 0)
+
+            return (
+              <Link
+                key={c.id}
+                to={`/clientes/${c.id}`}
+                className="bg-card rounded-xl p-4 shadow-sm flex items-center gap-3 block"
+              >
+                <Avatar nome={c.nome} />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-text truncate">{c.nome}</p>
+                  <p className="text-xs text-text-light">{c.telefone}</p>
+                </div>
+                {totalAberto > 0 ? (
+                  <span className="text-sm font-bold text-danger">
+                    {formatCurrency(totalAberto)}
+                  </span>
+                ) : (
+                  <span className="text-xs font-bold text-success bg-success/10 px-2 py-1 rounded-full">
+                    Em dia
+                  </span>
+                )}
+              </Link>
+            )
+          })
+        )}
       </div>
     </div>
   )

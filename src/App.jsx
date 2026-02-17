@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
 import CustomerDetail from './pages/CustomerDetail'
+import Settings from './pages/Settings'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/clientes" element={<Customers />} />
           <Route path="/clientes/:id" element={<CustomerDetail />} />
+          <Route path="/configuracoes" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>

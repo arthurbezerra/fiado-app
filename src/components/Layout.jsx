@@ -25,6 +25,14 @@ export default function Layout() {
           >
             Clientes
           </NavLink>
+          <NavLink
+            to="/configuracoes"
+            className={({ isActive }) =>
+              isActive ? 'text-accent' : 'text-white/70 hover:text-white'
+            }
+          >
+            Config
+          </NavLink>
         </nav>
       </header>
 

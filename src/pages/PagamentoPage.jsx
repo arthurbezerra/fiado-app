@@ -4,6 +4,18 @@ import { QRCodeSVG } from 'qrcode.react'
 import { buildPixPayload } from '../lib/pix'
 import { formatCurrency } from '../lib/utils'
 
+const C = {
+  bg:       '#1E1C54',
+  card:     '#2A2870',
+  cardAlt:  '#252362',
+  teal:     '#00C4A7',
+  tealDark: '#00A98F',
+  white:    '#FFFFFF',
+  dim:      'rgba(255,255,255,0.55)',
+  dimMore:  'rgba(255,255,255,0.25)',
+  danger:   '#FF6B6B',
+}
+
 export default function PagamentoPage() {
   const [params] = useSearchParams()
   const [copied, setCopied] = useState(false)
@@ -18,15 +30,14 @@ export default function PagamentoPage() {
 
   if (!pix || !valor || Number(valor) <= 0) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f3ee' }}>
-        <p style={{ color: '#888', fontSize: 14 }}>Link de pagamento inválido.</p>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.bg }}>
+        <p style={{ color: C.dim, fontSize: 14, fontFamily: 'Nunito, sans-serif' }}>Link de pagamento inválido.</p>
       </div>
     )
   }
 
-  const pixCode = buildPixPayload({ chavePix: pix, valor, nomeLoja: loja, cidade, descricao: desc })
+  const pixCode   = buildPixPayload({ chavePix: pix, valor, nomeLoja: loja, cidade, descricao: desc })
   const firstName = nome ? nome.split(' ')[0] : null
-  const initials  = loja.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase()
 
   function handleCopy() {
     navigator.clipboard.writeText(pixCode).then(() => {
@@ -35,95 +46,100 @@ export default function PagamentoPage() {
     })
   }
 
-  return (
-    <div style={styles.page}>
+  function selectCode() {
+    const el = document.getElementById('pix-code')
+    if (!el) return
+    const sel = window.getSelection()
+    const range = document.createRange()
+    range.selectNodeContents(el)
+    sel.removeAllRanges()
+    sel.addRange(range)
+  }
 
-      {/* ── Header ── */}
-      <div style={styles.header}>
-        <div style={styles.avatar}>{initials}</div>
-        <p style={styles.headerSub}>Cobrança de</p>
-        <p style={styles.headerLoja}>{loja}</p>
+  return (
+    <div style={s.page}>
+
+      {/* ── Store header ── */}
+      <div style={s.header}>
+        <span style={s.emoji}>🏪</span>
+        <p style={s.lojaLabel}>Cobrança de</p>
+        <p style={s.lojaName}>{loja}</p>
       </div>
 
       {/* ── Amount hero ── */}
-      <div style={styles.amountCard}>
+      <div style={s.amountBlock}>
         {firstName && (
-          <p style={styles.amountGreeting}>
-            Oi <strong>{firstName}</strong>, você tem um saldo em aberto 👋
-          </p>
+          <p style={s.greeting}>Oi, <strong style={{ color: C.white }}>{firstName}</strong> 👋</p>
         )}
-        <p style={styles.amount}>{formatCurrency(Number(valor))}</p>
-        {desc && <p style={styles.amountDesc}>{desc}</p>}
+        <p style={s.amountLabel}>Valor a pagar</p>
+        <p style={s.amount}>{formatCurrency(Number(valor))}</p>
+        {desc && <p style={s.desc}>{desc}</p>}
       </div>
 
-      {/* ── How-to steps ── */}
-      <div style={styles.card}>
-        <p style={styles.cardTitle}>Como pagar</p>
-        <div style={styles.steps}>
+      {/* ── Divider ── */}
+      <div style={s.divider} />
+
+      {/* ── Steps ── */}
+      <div style={s.section}>
+        <p style={s.sectionTitle}>Como pagar</p>
+        <div style={s.steps}>
           {[
-            'Copie o código Pix abaixo',
-            'Abra o app do seu banco',
-            'Vá em Pix → Pix Copia e Cola',
-            'Cole e confirme',
-          ].map((text, i) => (
-            <div key={i} style={styles.step}>
-              <div style={styles.stepNum}>{i + 1}</div>
-              <p style={styles.stepText}>{text}</p>
+            ['1', 'Copie o código Pix abaixo'],
+            ['2', 'Abra o app do seu banco'],
+            ['3', 'Pix → Pix Copia e Cola'],
+            ['4', 'Cole e confirme o pagamento'],
+          ].map(([n, text]) => (
+            <div key={n} style={s.step}>
+              <div style={s.stepNum}>{n}</div>
+              <p style={s.stepText}>{text}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* ── Pix code ── */}
-      <div style={styles.card}>
-        <p style={styles.cardTitle}>Código Pix</p>
-        <div
-          style={styles.codeBox}
-          onClick={() => {
-            const sel = window.getSelection()
-            const range = document.createRange()
-            range.selectNodeContents(document.getElementById('pix-code'))
-            sel.removeAllRanges()
-            sel.addRange(range)
-          }}
-        >
-          <p id="pix-code" style={styles.codeText}>{pixCode}</p>
+      <div style={s.section}>
+        <p style={s.sectionTitle}>Código Pix</p>
+        <div style={s.codeCard} onClick={selectCode}>
+          <p id="pix-code" style={s.codeText}>{pixCode}</p>
+          <p style={s.codeTap}>toque para selecionar</p>
         </div>
-        <p style={styles.codeTip}>Toque no código para selecionar</p>
       </div>
 
-      {/* ── QR Code toggle ── */}
-      <div style={styles.card}>
-        <button style={styles.qrToggle} onClick={() => setShowQR(v => !v)}>
-          <span>📷 Prefiro escanear o QR Code</span>
-          <span style={{ ...styles.qrChevron, transform: showQR ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
+      {/* ── QR toggle ── */}
+      <div style={s.section}>
+        <button style={s.qrBtn} onClick={() => setShowQR(v => !v)}>
+          <span style={s.qrBtnText}>📷 Prefiro escanear o QR Code</span>
+          <span style={{ ...s.chevron, transform: showQR ? 'rotate(180deg)' : 'rotate(0)' }}>›</span>
         </button>
+
         {showQR && (
-          <div style={styles.qrWrap}>
-            <QRCodeSVG value={pixCode} size={180} />
-            <p style={styles.qrTip}>Escaneie pelo app do banco ou pela câmera</p>
+          <div style={s.qrWrap}>
+            <div style={s.qrBox}>
+              <QRCodeSVG value={pixCode} size={176} fgColor={C.bg} bgColor="#FFFFFF" />
+            </div>
+            <p style={s.qrTip}>Escaneie pelo app do banco ou pela câmera</p>
           </div>
         )}
       </div>
 
-      {/* ── Trust footer ── */}
-      <p style={styles.trust}>
-        🔒 Pix é instantâneo e seguro · Banco Central do Brasil
-      </p>
+      {/* ── Trust line ── */}
+      <p style={s.trust}>🔒 Pix seguro · Banco Central do Brasil</p>
 
-      {/* ── Spacer for fixed button ── */}
-      <div style={{ height: 100 }} />
+      {/* ── Spacer ── */}
+      <div style={{ height: 110 }} />
 
       {/* ── Sticky CTA ── */}
-      <div style={styles.stickyBar}>
+      <div style={s.stickyBar}>
         <button
           onClick={handleCopy}
-          style={{
-            ...styles.ctaButton,
-            background: copied ? '#27ae60' : '#32BCAD',
-          }}
+          style={{ ...s.ctaBtn, background: copied ? '#27ae60' : C.teal }}
+          onMouseEnter={e => !copied && (e.currentTarget.style.background = C.tealDark)}
+          onMouseLeave={e => !copied && (e.currentTarget.style.background = C.teal)}
         >
-          {copied ? '✓ Código copiado! Abra seu banco.' : 'Copiar código Pix'}
+          {copied
+            ? '✓  Copiado! Agora abra seu banco.'
+            : 'Copiar código Pix'}
         </button>
       </div>
 
@@ -131,120 +147,118 @@ export default function PagamentoPage() {
   )
 }
 
-/* ─── Styles ──────────────────────────────────────────────── */
-const styles = {
+/* ─── Styles ─────────────────────────────────────────────── */
+const s = {
   page: {
     minHeight: '100vh',
-    background: '#f5f3ee',
+    background: C.bg,
     fontFamily: "'Nunito', sans-serif",
-    color: '#1a1a2e',
+    color: C.white,
     maxWidth: 480,
     margin: '0 auto',
-    padding: '0 0 24px',
   },
 
   /* header */
   header: {
-    background: '#1a1a2e',
-    color: '#fff',
     textAlign: 'center',
-    padding: '32px 24px 28px',
-    borderRadius: '0 0 28px 28px',
+    padding: '48px 24px 28px',
   },
-  avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: '50%',
-    background: '#f39c12',
-    color: '#fff',
-    fontWeight: 900,
-    fontSize: 24,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: '0 auto 12px',
-    letterSpacing: '-0.5px',
+  emoji: {
+    fontSize: 48,
+    display: 'block',
+    marginBottom: 12,
+    lineHeight: 1,
   },
-  headerSub: {
+  lojaLabel: {
     margin: 0,
     fontSize: 11,
     fontWeight: 700,
-    letterSpacing: '0.12em',
+    letterSpacing: '0.14em',
     textTransform: 'uppercase',
-    color: 'rgba(255,255,255,0.5)',
+    color: C.dim,
   },
-  headerLoja: {
-    margin: '4px 0 0',
-    fontSize: 22,
+  lojaName: {
+    margin: '6px 0 0',
+    fontSize: 26,
     fontWeight: 900,
-    letterSpacing: '-0.3px',
+    letterSpacing: '-0.5px',
+    color: C.white,
   },
 
   /* amount */
-  amountCard: {
-    background: '#fff',
-    margin: '20px 16px 0',
-    borderRadius: 24,
-    padding: '28px 24px',
+  amountBlock: {
     textAlign: 'center',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+    padding: '8px 24px 36px',
   },
-  amountGreeting: {
-    margin: '0 0 12px',
-    fontSize: 15,
-    color: '#555',
-    lineHeight: 1.4,
+  greeting: {
+    margin: '0 0 4px',
+    fontSize: 16,
+    fontWeight: 600,
+    color: C.dim,
+  },
+  amountLabel: {
+    margin: '0 0 8px',
+    fontSize: 12,
+    fontWeight: 700,
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    color: C.dimMore,
   },
   amount: {
     margin: 0,
-    fontSize: 52,
+    fontSize: 56,
     fontWeight: 900,
-    color: '#e74c3c',
-    letterSpacing: '-1.5px',
+    letterSpacing: '-2px',
     lineHeight: 1,
+    color: C.white,
   },
-  amountDesc: {
-    margin: '12px 0 0',
-    fontSize: 13,
-    color: '#999',
+  desc: {
+    margin: '14px 0 0',
+    fontSize: 14,
+    color: C.dim,
   },
 
-  /* generic card */
-  card: {
-    background: '#fff',
-    margin: '12px 16px 0',
-    borderRadius: 24,
-    padding: '22px 20px',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+  /* divider */
+  divider: {
+    height: 1,
+    background: 'rgba(255,255,255,0.08)',
+    margin: '0 24px',
   },
-  cardTitle: {
-    margin: '0 0 16px',
-    fontSize: 13,
+
+  /* sections */
+  section: {
+    padding: '24px 20px 0',
+  },
+  sectionTitle: {
+    margin: '0 0 14px',
+    fontSize: 11,
     fontWeight: 800,
+    letterSpacing: '0.12em',
     textTransform: 'uppercase',
-    letterSpacing: '0.08em',
-    color: '#999',
+    color: C.dimMore,
   },
 
   /* steps */
   steps: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 14,
+    background: C.card,
+    borderRadius: 20,
+    overflow: 'hidden',
   },
   step: {
     display: 'flex',
     alignItems: 'center',
-    gap: 14,
+    gap: 16,
+    padding: '16px 20px',
+    borderBottom: `1px solid rgba(255,255,255,0.06)`,
   },
   stepNum: {
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
     borderRadius: '50%',
-    background: '#fff3e0',
-    color: '#f39c12',
+    background: C.teal,
+    color: C.bg,
     fontWeight: 900,
-    fontSize: 15,
+    fontSize: 14,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -253,65 +267,76 @@ const styles = {
   stepText: {
     margin: 0,
     fontSize: 15,
-    fontWeight: 600,
-    color: '#1a1a2e',
+    fontWeight: 700,
+    color: C.white,
   },
 
   /* pix code */
-  codeBox: {
-    background: '#f5f3ee',
-    borderRadius: 14,
-    padding: '14px 16px',
+  codeCard: {
+    background: C.card,
+    borderRadius: 20,
+    padding: '18px 20px',
     cursor: 'text',
-    userSelect: 'all',
   },
   codeText: {
     margin: 0,
     fontSize: 11,
     fontFamily: 'monospace',
-    color: '#555',
+    color: C.teal,
     wordBreak: 'break-all',
-    lineHeight: 1.6,
+    lineHeight: 1.7,
     userSelect: 'all',
   },
-  codeTip: {
-    margin: '8px 0 0',
+  codeTap: {
+    margin: '10px 0 0',
     fontSize: 11,
-    color: '#bbb',
+    color: C.dimMore,
     textAlign: 'center',
+    fontStyle: 'italic',
   },
 
   /* QR toggle */
-  qrToggle: {
+  qrBtn: {
     width: '100%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    background: 'none',
+    background: C.card,
     border: 'none',
-    padding: 0,
+    borderRadius: 20,
+    padding: '18px 20px',
     cursor: 'pointer',
     fontFamily: "'Nunito', sans-serif",
+  },
+  qrBtnText: {
     fontSize: 15,
     fontWeight: 700,
-    color: '#1a1a2e',
+    color: C.white,
   },
-  qrChevron: {
-    fontSize: 18,
-    transition: 'transform 0.2s',
-    color: '#aaa',
+  chevron: {
+    fontSize: 22,
+    color: C.dim,
+    fontWeight: 300,
+    transition: 'transform 0.25s',
+    display: 'block',
+    lineHeight: 1,
   },
   qrWrap: {
-    marginTop: 20,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 12,
+    gap: 14,
+    paddingTop: 24,
+  },
+  qrBox: {
+    background: '#fff',
+    borderRadius: 16,
+    padding: 16,
   },
   qrTip: {
     margin: 0,
-    fontSize: 12,
-    color: '#999',
+    fontSize: 13,
+    color: C.dim,
     textAlign: 'center',
   },
 
@@ -319,12 +344,12 @@ const styles = {
   trust: {
     textAlign: 'center',
     fontSize: 12,
-    color: '#bbb',
-    margin: '20px 16px 0',
+    color: C.dimMore,
+    margin: '28px 24px 0',
     lineHeight: 1.5,
   },
 
-  /* sticky button */
+  /* sticky bar */
   stickyBar: {
     position: 'fixed',
     bottom: 0,
@@ -332,21 +357,21 @@ const styles = {
     transform: 'translateX(-50%)',
     width: '100%',
     maxWidth: 480,
-    padding: '12px 16px 24px',
-    background: 'linear-gradient(to top, #f5f3ee 70%, transparent)',
+    padding: '16px 20px 32px',
+    background: `linear-gradient(to top, ${C.bg} 65%, transparent)`,
   },
-  ctaButton: {
+  ctaBtn: {
     width: '100%',
     border: 'none',
     borderRadius: 18,
-    padding: '18px 24px',
-    color: '#fff',
+    padding: '20px 24px',
+    color: C.bg,
     fontFamily: "'Nunito', sans-serif",
     fontSize: 17,
     fontWeight: 900,
     cursor: 'pointer',
-    transition: 'background 0.3s, transform 0.1s',
     letterSpacing: '-0.2px',
-    boxShadow: '0 4px 20px rgba(50,188,173,0.35)',
+    transition: 'background 0.25s',
+    boxShadow: '0 8px 30px rgba(0,196,167,0.3)',
   },
 }

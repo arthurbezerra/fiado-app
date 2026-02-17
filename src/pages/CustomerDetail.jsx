@@ -3,43 +3,56 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { getCustomer, addDebt, markDebtPaid, deleteDebt, deleteCustomer } from '../lib/store'
 import { formatCurrency, formatDate } from '../lib/utils'
 import Avatar from '../components/Avatar'
+import BottomSheet from '../components/BottomSheet'
 import CobrancaModal from '../components/CobrancaModal'
 import toast from 'react-hot-toast'
+
+const C = {
+  bg: '#1E1C54', card: '#2A2870', teal: '#00C4A7',
+  white: '#FFFFFF', dim: 'rgba(255,255,255,0.5)',
+  faint: 'rgba(255,255,255,0.08)', red: '#FF6B6B', green: '#34D39A',
+  font: "'Nunito', sans-serif",
+}
+
+const inp = {
+  display: 'block', width: '100%', boxSizing: 'border-box',
+  background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
+  borderRadius: 14, padding: '15px 16px',
+  color: '#fff', fontFamily: "'Nunito', sans-serif", fontSize: 16, fontWeight: 600,
+  outline: 'none', marginBottom: 12,
+}
 
 export default function CustomerDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [customer, setCustomer] = useState(() => getCustomer(id))
-  const [showForm, setShowForm] = useState(false)
+  const [showForm, setShowForm]       = useState(false)
   const [showCobranca, setShowCobranca] = useState(false)
-  const [descricao, setDescricao] = useState('')
-  const [valor, setValor] = useState('')
-  const [data, setData] = useState(() => new Date().toISOString().slice(0, 10))
+  const [descricao, setDescricao]     = useState('')
+  const [valor, setValor]             = useState('')
+  const [data, setData]               = useState(() => new Date().toISOString().slice(0, 10))
 
   if (!customer) {
     return (
-      <div className="text-center py-12">
-        <p className="text-text-light mb-4">Cliente não encontrado.</p>
-        <button onClick={() => navigate('/clientes')} className="text-accent font-bold">
+      <div style={{ fontFamily: C.font, color: C.white, textAlign: 'center', padding: '80px 20px' }}>
+        <p style={{ color: C.dim, marginBottom: 16 }}>Cliente não encontrado.</p>
+        <button onClick={() => navigate('/clientes')} style={{ color: C.teal, background: 'none', border: 'none', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: C.font }}>
           Voltar
         </button>
       </div>
     )
   }
 
-  const openDebts = customer.dividas.filter((d) => !d.pago)
-  const totalAberto = openDebts.reduce((sum, d) => sum + d.valor, 0)
-  const totalPago = customer.dividas
-    .filter((d) => d.pago)
-    .reduce((sum, d) => sum + d.valor, 0)
+  const openDebts  = customer.dividas.filter(d => !d.pago)
+  const totalAberto = openDebts.reduce((s, d) => s + d.valor, 0)
+  const totalPago   = customer.dividas.filter(d => d.pago).reduce((s, d) => s + d.valor, 0)
 
   function handleAddDebt(e) {
     e.preventDefault()
     if (!descricao.trim() || !valor || Number(valor) <= 0) return
     addDebt(id, descricao.trim(), Number(valor), data)
     setCustomer(getCustomer(id))
-    setDescricao('')
-    setValor('')
+    setDescricao(''); setValor('')
     setShowForm(false)
     toast.success('Dívida registrada!')
   }
@@ -58,141 +71,143 @@ export default function CustomerDetail() {
   }
 
   function handleDeleteCustomer() {
-    if (!window.confirm(`Excluir o cliente "${customer.nome}" e todo o histórico? Esta ação não pode ser desfeita.`)) return
+    if (!window.confirm(`Excluir "${customer.nome}" e todo o histórico?`)) return
     deleteCustomer(id)
     toast.success('Cliente excluído.')
     navigate('/clientes')
   }
 
-  const sortedDebts = [...customer.dividas].sort(
-    (a, b) => new Date(b.data) - new Date(a.data)
-  )
+  const sortedDebts = [...customer.dividas].sort((a, b) => new Date(b.data) - new Date(a.data))
 
   return (
-    <div className="space-y-6">
-      {/* Back button */}
-      <button
-        onClick={() => navigate('/clientes')}
-        className="text-text-light hover:text-text text-sm font-semibold"
-      >
-        &larr; Voltar
-      </button>
+    <div style={{ fontFamily: C.font, color: C.white, minHeight: '100vh', paddingBottom: 40 }}>
 
-      {/* Customer Header */}
-      <div className="bg-card rounded-xl p-5 shadow-sm flex flex-col sm:flex-row items-center gap-4">
+      {/* ── Header ── */}
+      <div style={{ padding: '52px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <button
+          onClick={() => navigate('/clientes')}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.dim, padding: 4, display: 'flex', alignItems: 'center', gap: 6 }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <button
+          onClick={handleDeleteCustomer}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,107,107,0.5)', fontSize: 12, fontWeight: 700, fontFamily: C.font, padding: 4 }}
+        >
+          Excluir
+        </button>
+      </div>
+
+      {/* ── Customer Hero ── */}
+      <div style={{ padding: '24px 20px 28px', textAlign: 'center' }}>
         <Avatar nome={customer.nome} size="xl" />
-        <div className="text-center sm:text-left flex-1">
-          <h1 className="text-xl font-extrabold">{customer.nome}</h1>
-          <p className="text-text-light text-sm">{customer.telefone}</p>
-          <div className="flex gap-4 mt-2 justify-center sm:justify-start">
-            <div>
-              <p className="text-xs text-text-light">Em Aberto</p>
-              <p className="font-bold text-danger">{formatCurrency(totalAberto)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-text-light">Pago</p>
-              <p className="font-bold text-success">{formatCurrency(totalPago)}</p>
-            </div>
+        <h1 style={{ margin: '16px 0 4px', fontSize: 26, fontWeight: 900, letterSpacing: '-0.4px' }}>
+          {customer.nome}
+        </h1>
+        <p style={{ margin: 0, fontSize: 14, color: C.dim }}>{customer.telefone}</p>
+
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginTop: 20 }}>
+          <div>
+            <p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Em Aberto</p>
+            <p style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 900, color: C.red, letterSpacing: '-0.5px' }}>
+              {formatCurrency(totalAberto)}
+            </p>
+          </div>
+          <div style={{ width: 1, background: 'rgba(255,255,255,0.1)' }} />
+          <div>
+            <p style={{ margin: 0, fontSize: 11, fontWeight: 800, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Pago</p>
+            <p style={{ margin: '4px 0 0', fontSize: 22, fontWeight: 900, color: C.green, letterSpacing: '-0.5px' }}>
+              {formatCurrency(totalPago)}
+            </p>
           </div>
         </div>
+
         {totalAberto > 0 && (
           <button
             onClick={() => setShowCobranca(true)}
-            className="bg-[#25D366] hover:bg-[#1da851] text-white font-bold text-sm px-4 py-2 rounded-xl transition-colors shrink-0"
+            style={{
+              marginTop: 20, background: '#25D366', border: 'none', borderRadius: 16,
+              padding: '14px 28px', color: '#fff', fontFamily: C.font,
+              fontSize: 15, fontWeight: 900, cursor: 'pointer',
+              boxShadow: '0 6px 20px rgba(37,211,102,0.3)',
+            }}
           >
             Cobrar via WhatsApp
           </button>
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-2">
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-accent hover:bg-accent-hover text-white font-bold text-sm px-4 py-2 rounded-xl transition-colors"
-        >
-          {showForm ? 'Cancelar' : '+ Nova Dívida'}
-        </button>
-      </div>
+      {/* ── Debt History ── */}
+      <div style={{ padding: '0 20px' }}>
+        <p style={{ margin: '0 0 14px', fontSize: 11, fontWeight: 800, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          Histórico
+        </p>
 
-      {/* Add Debt Form */}
-      {showForm && (
-        <form onSubmit={handleAddDebt} className="bg-card rounded-xl p-4 shadow-sm space-y-3">
-          <input
-            type="text"
-            placeholder="Descrição (ex: 2kg arroz)"
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            className="w-full border border-white/10 bg-white/5 text-white placeholder:text-white/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-            autoFocus
-          />
-          <input
-            type="number"
-            placeholder="Valor (R$)"
-            step="0.01"
-            min="0.01"
-            value={valor}
-            onChange={(e) => setValor(e.target.value)}
-            className="w-full border border-white/10 bg-white/5 text-white placeholder:text-white/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-          />
-          <input
-            type="date"
-            value={data}
-            onChange={(e) => setData(e.target.value)}
-            className="w-full border border-white/10 bg-white/5 text-white placeholder:text-white/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
-          />
-          <button
-            type="submit"
-            className="w-full bg-accent hover:bg-accent-hover text-white font-bold py-2 rounded-lg transition-colors"
-          >
-            Registrar Dívida
-          </button>
-        </form>
-      )}
-
-      {/* Debt History */}
-      <div>
-        <h2 className="text-lg font-bold mb-3">Histórico</h2>
         {sortedDebts.length === 0 ? (
-          <p className="text-text-light text-sm">Nenhuma dívida registrada.</p>
+          <div style={{ background: C.card, borderRadius: 20, padding: '28px', textAlign: 'center' }}>
+            <p style={{ margin: 0, color: C.dim, fontSize: 14 }}>Nenhuma dívida registrada.</p>
+          </div>
         ) : (
-          <div className="space-y-2">
-            {sortedDebts.map((d) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {sortedDebts.map(d => (
               <div
                 key={d.id}
-                className={`bg-card rounded-xl p-4 shadow-sm flex items-center gap-3 ${
-                  d.pago ? 'opacity-60' : ''
-                }`}
+                style={{
+                  background: C.card, borderRadius: 20, padding: '16px',
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  opacity: d.pago ? 0.55 : 1,
+                }}
               >
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-text truncate">{d.descricao}</p>
-                  <p className="text-xs text-text-light">{formatDate(d.data)}</p>
+                {/* Teal circle icon (like Tikkie's € circle) */}
+                <div style={{
+                  width: 40, height: 40, borderRadius: '50%',
+                  background: d.pago ? 'rgba(52,211,154,0.15)' : 'rgba(0,196,167,0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0, fontSize: 18,
+                }}>
+                  {d.pago ? '✓' : '₢'}
                 </div>
-                <p
-                  className={`font-bold text-sm shrink-0 ${
-                    d.pago ? 'text-success line-through' : 'text-danger'
-                  }`}
-                >
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: C.white, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {d.descricao}
+                  </p>
+                  <p style={{ margin: '3px 0 0', fontSize: 12, color: C.dim }}>{formatDate(d.data)}</p>
+                </div>
+
+                <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: d.pago ? C.green : C.red, flexShrink: 0, textDecoration: d.pago ? 'line-through' : 'none' }}>
                   {formatCurrency(d.valor)}
                 </p>
-                {d.pago ? (
-                  <span className="text-xs font-bold text-success bg-success/10 px-2 py-1 rounded-full shrink-0">
-                    Pago
-                  </span>
-                ) : (
+
+                {!d.pago ? (
                   <button
                     onClick={() => handleMarkPaid(d.id)}
-                    className="text-xs font-bold text-white bg-success hover:bg-success/80 px-3 py-1.5 rounded-lg transition-colors shrink-0"
+                    style={{
+                      background: C.green, border: 'none', borderRadius: 10,
+                      padding: '7px 12px', color: '#151347',
+                      fontFamily: C.font, fontSize: 12, fontWeight: 900,
+                      cursor: 'pointer', flexShrink: 0,
+                    }}
                   >
                     Pagar
                   </button>
+                ) : (
+                  <span style={{
+                    fontSize: 11, fontWeight: 800, color: C.green,
+                    background: 'rgba(52,211,154,0.15)', borderRadius: 20,
+                    padding: '5px 10px', flexShrink: 0,
+                  }}>
+                    Pago
+                  </span>
                 )}
+
                 <button
                   onClick={() => handleDeleteDebt(d.id)}
-                  className="text-text-light hover:text-danger transition-colors shrink-0 text-lg leading-none ml-1"
-                  title="Excluir lançamento"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.2)', fontSize: 20, lineHeight: 1, padding: '0 0 0 4px', flexShrink: 0 }}
                 >
-                  &times;
+                  ×
                 </button>
               </div>
             ))}
@@ -200,17 +215,50 @@ export default function CustomerDetail() {
         )}
       </div>
 
-      {/* Danger Zone */}
-      <div className="border border-danger/20 rounded-xl p-4">
-        <h3 className="text-sm font-bold text-danger mb-2">Zona de perigo</h3>
-        <button
-          onClick={handleDeleteCustomer}
-          className="text-sm font-bold text-danger hover:bg-danger/10 px-3 py-2 rounded-lg transition-colors"
-        >
-          Excluir cliente
-        </button>
-      </div>
+      {/* ── FAB: add debt ── */}
+      <button
+        onClick={() => setShowForm(true)}
+        style={{
+          position: 'fixed', bottom: 88, right: 20,
+          width: 56, height: 56, borderRadius: '50%',
+          background: C.teal, border: 'none', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 6px 24px rgba(0,196,167,0.4)', zIndex: 30,
+        }}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#151347" strokeWidth="3" strokeLinecap="round">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+      </button>
 
+      {/* ── Add Debt Sheet ── */}
+      {showForm && (
+        <BottomSheet title="Nova Dívida" onClose={() => setShowForm(false)}>
+          <form onSubmit={handleAddDebt}>
+            <input
+              type="text" placeholder="Descrição  (ex: 2kg arroz)" value={descricao}
+              onChange={e => setDescricao(e.target.value)} autoFocus style={inp}
+            />
+            <input
+              type="number" placeholder="Valor (R$)" step="0.01" min="0.01"
+              value={valor} onChange={e => setValor(e.target.value)} style={inp}
+            />
+            <input
+              type="date" value={data} onChange={e => setData(e.target.value)} style={inp}
+            />
+            <button type="submit" style={{
+              width: '100%', background: C.teal, border: 'none', borderRadius: 16,
+              padding: '18px', color: '#151347', fontFamily: C.font,
+              fontSize: 17, fontWeight: 900, cursor: 'pointer',
+              boxShadow: '0 6px 24px rgba(0,196,167,0.3)', marginTop: 4,
+            }}>
+              Registrar Dívida
+            </button>
+          </form>
+        </BottomSheet>
+      )}
+
+      {/* ── Cobrança Modal ── */}
       {showCobranca && (
         <CobrancaModal
           customer={customer}

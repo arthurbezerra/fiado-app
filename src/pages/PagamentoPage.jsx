@@ -4,16 +4,10 @@ import { QRCodeSVG } from 'qrcode.react'
 import { buildPixPayload } from '../lib/pix'
 import { formatCurrency } from '../lib/utils'
 
-const STEPS = [
-  { n: '1', text: 'Copie o código abaixo' },
-  { n: '2', text: 'Abra o app do seu banco' },
-  { n: '3', text: 'Vá em Pix → Pix Copia e Cola' },
-  { n: '4', text: 'Cole e confirme o pagamento' },
-]
-
 export default function PagamentoPage() {
   const [params] = useSearchParams()
   const [copied, setCopied] = useState(false)
+  const [showQR, setShowQR] = useState(false)
 
   const nome   = params.get('nome')   || ''
   const valor  = params.get('valor')  || '0'
@@ -24,92 +18,335 @@ export default function PagamentoPage() {
 
   if (!pix || !valor || Number(valor) <= 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-bg p-4">
-        <p className="text-text-light text-sm">Link de pagamento inválido.</p>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f3ee' }}>
+        <p style={{ color: '#888', fontSize: 14 }}>Link de pagamento inválido.</p>
       </div>
     )
   }
 
   const pixCode = buildPixPayload({ chavePix: pix, valor, nomeLoja: loja, cidade, descricao: desc })
+  const firstName = nome ? nome.split(' ')[0] : null
+  const initials  = loja.trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase()
 
   function handleCopy() {
     navigator.clipboard.writeText(pixCode).then(() => {
       setCopied(true)
-      setTimeout(() => setCopied(false), 4000)
+      setTimeout(() => setCopied(false), 5000)
     })
   }
 
-  const firstName = nome ? nome.split(' ')[0] : null
-
   return (
-    <div className="min-h-screen bg-bg flex flex-col">
-      <header className="bg-navy text-white px-4 py-4 text-center">
-        <p className="text-xs text-white/50 uppercase tracking-widest mb-0.5">Cobrança de</p>
-        <p className="text-xl font-extrabold">{loja}</p>
-      </header>
+    <div style={styles.page}>
 
-      <main className="flex-1 p-4 max-w-md mx-auto w-full space-y-4 pb-10">
+      {/* ── Header ── */}
+      <div style={styles.header}>
+        <div style={styles.avatar}>{initials}</div>
+        <p style={styles.headerSub}>Cobrança de</p>
+        <p style={styles.headerLoja}>{loja}</p>
+      </div>
 
-        {/* Amount */}
-        <div className="bg-card rounded-2xl p-6 shadow-sm text-center mt-2">
-          {firstName && (
-            <p className="text-text-light text-sm mb-2">
-              Olá, <strong>{firstName}</strong>! Você tem um saldo em aberto:
-            </p>
-          )}
-          <p className="text-5xl font-extrabold text-danger">{formatCurrency(Number(valor))}</p>
-          {desc && <p className="text-xs text-text-light mt-3">{desc}</p>}
-        </div>
-
-        {/* How to pay */}
-        <div className="bg-card rounded-2xl p-5 shadow-sm">
-          <p className="text-sm font-bold text-text mb-3">Como pagar</p>
-          <ol className="space-y-2">
-            {STEPS.map((s) => (
-              <li key={s.n} className="flex items-center gap-3">
-                <span className="w-7 h-7 rounded-full bg-accent text-white text-xs font-extrabold flex items-center justify-center shrink-0">
-                  {s.n}
-                </span>
-                <span className="text-sm text-text">{s.text}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-
-        {/* Copia e Cola — primary CTA */}
-        <div className="bg-card rounded-2xl p-5 shadow-sm space-y-3">
-          <p className="text-sm font-bold text-text">Código Pix Copia e Cola</p>
-          <div className="bg-bg rounded-xl p-3 text-xs text-text-light break-all font-mono leading-relaxed select-all">
-            {pixCode}
-          </div>
-          <button
-            onClick={handleCopy}
-            className={`w-full font-bold py-4 rounded-xl transition-all text-base ${
-              copied
-                ? 'bg-success text-white scale-95'
-                : 'bg-accent hover:bg-accent-hover text-white'
-            }`}
-          >
-            {copied ? '✓ Código copiado! Agora abra seu banco.' : 'Copiar código Pix'}
-          </button>
-        </div>
-
-        {/* QR Code — secondary */}
-        <div className="bg-card rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3">
-          <p className="text-sm font-bold text-text">Ou escaneie o QR Code</p>
-          <p className="text-xs text-text-light text-center -mt-1">
-            Use a câmera do celular ou a opção de QR Code no app do seu banco.
+      {/* ── Amount hero ── */}
+      <div style={styles.amountCard}>
+        {firstName && (
+          <p style={styles.amountGreeting}>
+            Oi <strong>{firstName}</strong>, você tem um saldo em aberto 👋
           </p>
-          <div className="p-3 bg-white rounded-xl border border-gray-100 shadow-inner">
-            <QRCodeSVG value={pixCode} size={180} />
-          </div>
+        )}
+        <p style={styles.amount}>{formatCurrency(Number(valor))}</p>
+        {desc && <p style={styles.amountDesc}>{desc}</p>}
+      </div>
+
+      {/* ── How-to steps ── */}
+      <div style={styles.card}>
+        <p style={styles.cardTitle}>Como pagar</p>
+        <div style={styles.steps}>
+          {[
+            'Copie o código Pix abaixo',
+            'Abra o app do seu banco',
+            'Vá em Pix → Pix Copia e Cola',
+            'Cole e confirme',
+          ].map((text, i) => (
+            <div key={i} style={styles.step}>
+              <div style={styles.stepNum}>{i + 1}</div>
+              <p style={styles.stepText}>{text}</p>
+            </div>
+          ))}
         </div>
+      </div>
 
-        <p className="text-center text-xs text-text-light pb-2">
-          Pix é instantâneo e funciona em qualquer banco · Banco Central do Brasil
-        </p>
+      {/* ── Pix code ── */}
+      <div style={styles.card}>
+        <p style={styles.cardTitle}>Código Pix</p>
+        <div
+          style={styles.codeBox}
+          onClick={() => {
+            const sel = window.getSelection()
+            const range = document.createRange()
+            range.selectNodeContents(document.getElementById('pix-code'))
+            sel.removeAllRanges()
+            sel.addRange(range)
+          }}
+        >
+          <p id="pix-code" style={styles.codeText}>{pixCode}</p>
+        </div>
+        <p style={styles.codeTip}>Toque no código para selecionar</p>
+      </div>
 
-      </main>
+      {/* ── QR Code toggle ── */}
+      <div style={styles.card}>
+        <button style={styles.qrToggle} onClick={() => setShowQR(v => !v)}>
+          <span>📷 Prefiro escanear o QR Code</span>
+          <span style={{ ...styles.qrChevron, transform: showQR ? 'rotate(180deg)' : 'rotate(0deg)' }}>▾</span>
+        </button>
+        {showQR && (
+          <div style={styles.qrWrap}>
+            <QRCodeSVG value={pixCode} size={180} />
+            <p style={styles.qrTip}>Escaneie pelo app do banco ou pela câmera</p>
+          </div>
+        )}
+      </div>
+
+      {/* ── Trust footer ── */}
+      <p style={styles.trust}>
+        🔒 Pix é instantâneo e seguro · Banco Central do Brasil
+      </p>
+
+      {/* ── Spacer for fixed button ── */}
+      <div style={{ height: 100 }} />
+
+      {/* ── Sticky CTA ── */}
+      <div style={styles.stickyBar}>
+        <button
+          onClick={handleCopy}
+          style={{
+            ...styles.ctaButton,
+            background: copied ? '#27ae60' : '#32BCAD',
+          }}
+        >
+          {copied ? '✓ Código copiado! Abra seu banco.' : 'Copiar código Pix'}
+        </button>
+      </div>
+
     </div>
   )
+}
+
+/* ─── Styles ──────────────────────────────────────────────── */
+const styles = {
+  page: {
+    minHeight: '100vh',
+    background: '#f5f3ee',
+    fontFamily: "'Nunito', sans-serif",
+    color: '#1a1a2e',
+    maxWidth: 480,
+    margin: '0 auto',
+    padding: '0 0 24px',
+  },
+
+  /* header */
+  header: {
+    background: '#1a1a2e',
+    color: '#fff',
+    textAlign: 'center',
+    padding: '32px 24px 28px',
+    borderRadius: '0 0 28px 28px',
+  },
+  avatar: {
+    width: 64,
+    height: 64,
+    borderRadius: '50%',
+    background: '#f39c12',
+    color: '#fff',
+    fontWeight: 900,
+    fontSize: 24,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: '0 auto 12px',
+    letterSpacing: '-0.5px',
+  },
+  headerSub: {
+    margin: 0,
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    color: 'rgba(255,255,255,0.5)',
+  },
+  headerLoja: {
+    margin: '4px 0 0',
+    fontSize: 22,
+    fontWeight: 900,
+    letterSpacing: '-0.3px',
+  },
+
+  /* amount */
+  amountCard: {
+    background: '#fff',
+    margin: '20px 16px 0',
+    borderRadius: 24,
+    padding: '28px 24px',
+    textAlign: 'center',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+  },
+  amountGreeting: {
+    margin: '0 0 12px',
+    fontSize: 15,
+    color: '#555',
+    lineHeight: 1.4,
+  },
+  amount: {
+    margin: 0,
+    fontSize: 52,
+    fontWeight: 900,
+    color: '#e74c3c',
+    letterSpacing: '-1.5px',
+    lineHeight: 1,
+  },
+  amountDesc: {
+    margin: '12px 0 0',
+    fontSize: 13,
+    color: '#999',
+  },
+
+  /* generic card */
+  card: {
+    background: '#fff',
+    margin: '12px 16px 0',
+    borderRadius: 24,
+    padding: '22px 20px',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+  },
+  cardTitle: {
+    margin: '0 0 16px',
+    fontSize: 13,
+    fontWeight: 800,
+    textTransform: 'uppercase',
+    letterSpacing: '0.08em',
+    color: '#999',
+  },
+
+  /* steps */
+  steps: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 14,
+  },
+  step: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 14,
+  },
+  stepNum: {
+    width: 32,
+    height: 32,
+    borderRadius: '50%',
+    background: '#fff3e0',
+    color: '#f39c12',
+    fontWeight: 900,
+    fontSize: 15,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  stepText: {
+    margin: 0,
+    fontSize: 15,
+    fontWeight: 600,
+    color: '#1a1a2e',
+  },
+
+  /* pix code */
+  codeBox: {
+    background: '#f5f3ee',
+    borderRadius: 14,
+    padding: '14px 16px',
+    cursor: 'text',
+    userSelect: 'all',
+  },
+  codeText: {
+    margin: 0,
+    fontSize: 11,
+    fontFamily: 'monospace',
+    color: '#555',
+    wordBreak: 'break-all',
+    lineHeight: 1.6,
+    userSelect: 'all',
+  },
+  codeTip: {
+    margin: '8px 0 0',
+    fontSize: 11,
+    color: '#bbb',
+    textAlign: 'center',
+  },
+
+  /* QR toggle */
+  qrToggle: {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    background: 'none',
+    border: 'none',
+    padding: 0,
+    cursor: 'pointer',
+    fontFamily: "'Nunito', sans-serif",
+    fontSize: 15,
+    fontWeight: 700,
+    color: '#1a1a2e',
+  },
+  qrChevron: {
+    fontSize: 18,
+    transition: 'transform 0.2s',
+    color: '#aaa',
+  },
+  qrWrap: {
+    marginTop: 20,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 12,
+  },
+  qrTip: {
+    margin: 0,
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'center',
+  },
+
+  /* trust */
+  trust: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#bbb',
+    margin: '20px 16px 0',
+    lineHeight: 1.5,
+  },
+
+  /* sticky button */
+  stickyBar: {
+    position: 'fixed',
+    bottom: 0,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    width: '100%',
+    maxWidth: 480,
+    padding: '12px 16px 24px',
+    background: 'linear-gradient(to top, #f5f3ee 70%, transparent)',
+  },
+  ctaButton: {
+    width: '100%',
+    border: 'none',
+    borderRadius: 18,
+    padding: '18px 24px',
+    color: '#fff',
+    fontFamily: "'Nunito', sans-serif",
+    fontSize: 17,
+    fontWeight: 900,
+    cursor: 'pointer',
+    transition: 'background 0.3s, transform 0.1s',
+    letterSpacing: '-0.2px',
+    boxShadow: '0 4px 20px rgba(50,188,173,0.35)',
+  },
 }

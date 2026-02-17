@@ -4,16 +4,11 @@ import { QRCodeSVG } from 'qrcode.react'
 import { buildPixPayload } from '../lib/pix'
 import { formatCurrency } from '../lib/utils'
 
-const BANKS = [
-  { name: 'Nubank',       bg: '#8A05BE', text: '#fff',    initial: 'N', url: 'https://nubank.com.br' },
-  { name: 'Inter',        bg: '#FF6600', text: '#fff',    initial: 'I', url: 'https://inter.co' },
-  { name: 'Itaú',         bg: '#EC7000', text: '#fff',    initial: 'I', url: 'https://www.itau.com.br' },
-  { name: 'Bradesco',     bg: '#CC092F', text: '#fff',    initial: 'B', url: 'https://banco.bradesco' },
-  { name: 'Caixa',        bg: '#006BB4', text: '#fff',    initial: 'C', url: 'https://www.caixa.gov.br' },
-  { name: 'BB',           bg: '#FDCE04', text: '#003082', initial: 'B', url: 'https://www.bb.com.br' },
-  { name: 'C6 Bank',      bg: '#242424', text: '#fff',    initial: 'C', url: 'https://www.c6bank.com.br' },
-  { name: 'PicPay',       bg: '#21C25E', text: '#fff',    initial: 'P', url: 'https://picpay.com' },
-  { name: 'Mercado Pago', bg: '#009EE3', text: '#fff',    initial: 'M', url: 'https://www.mercadopago.com.br' },
+const STEPS = [
+  { n: '1', text: 'Copie o código abaixo' },
+  { n: '2', text: 'Abra o app do seu banco' },
+  { n: '3', text: 'Vá em Pix → Pix Copia e Cola' },
+  { n: '4', text: 'Cole e confirme o pagamento' },
 ]
 
 export default function PagamentoPage() {
@@ -40,7 +35,7 @@ export default function PagamentoPage() {
   function handleCopy() {
     navigator.clipboard.writeText(pixCode).then(() => {
       setCopied(true)
-      setTimeout(() => setCopied(false), 3000)
+      setTimeout(() => setCopied(false), 4000)
     })
   }
 
@@ -54,6 +49,7 @@ export default function PagamentoPage() {
       </header>
 
       <main className="flex-1 p-4 max-w-md mx-auto w-full space-y-4 pb-10">
+
         {/* Amount */}
         <div className="bg-card rounded-2xl p-6 shadow-sm text-center mt-2">
           {firstName && (
@@ -65,68 +61,54 @@ export default function PagamentoPage() {
           {desc && <p className="text-xs text-text-light mt-3">{desc}</p>}
         </div>
 
+        {/* How to pay */}
+        <div className="bg-card rounded-2xl p-5 shadow-sm">
+          <p className="text-sm font-bold text-text mb-3">Como pagar</p>
+          <ol className="space-y-2">
+            {STEPS.map((s) => (
+              <li key={s.n} className="flex items-center gap-3">
+                <span className="w-7 h-7 rounded-full bg-accent text-white text-xs font-extrabold flex items-center justify-center shrink-0">
+                  {s.n}
+                </span>
+                <span className="text-sm text-text">{s.text}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+
         {/* Copia e Cola — primary CTA */}
         <div className="bg-card rounded-2xl p-5 shadow-sm space-y-3">
-          <div>
-            <p className="text-sm font-bold text-text">Pix Copia e Cola</p>
-            <p className="text-xs text-text-light mt-0.5">
-              Copie o código abaixo e cole em qualquer app de banco em Pix → Copia e Cola
-            </p>
-          </div>
+          <p className="text-sm font-bold text-text">Código Pix Copia e Cola</p>
           <div className="bg-bg rounded-xl p-3 text-xs text-text-light break-all font-mono leading-relaxed select-all">
             {pixCode}
           </div>
           <button
             onClick={handleCopy}
-            className={`w-full font-bold py-3.5 rounded-xl transition-colors text-sm ${
-              copied ? 'bg-success text-white' : 'bg-accent hover:bg-accent-hover text-white'
+            className={`w-full font-bold py-4 rounded-xl transition-all text-base ${
+              copied
+                ? 'bg-success text-white scale-95'
+                : 'bg-accent hover:bg-accent-hover text-white'
             }`}
           >
-            {copied ? '✓ Código copiado!' : 'Copiar código Pix'}
+            {copied ? '✓ Código copiado! Agora abra seu banco.' : 'Copiar código Pix'}
           </button>
         </div>
 
-        {/* QR Code */}
+        {/* QR Code — secondary */}
         <div className="bg-card rounded-2xl p-5 shadow-sm flex flex-col items-center gap-3">
-          <p className="text-sm font-bold text-text">QR Code Pix</p>
+          <p className="text-sm font-bold text-text">Ou escaneie o QR Code</p>
+          <p className="text-xs text-text-light text-center -mt-1">
+            Use a câmera do celular ou a opção de QR Code no app do seu banco.
+          </p>
           <div className="p-3 bg-white rounded-xl border border-gray-100 shadow-inner">
             <QRCodeSVG value={pixCode} size={180} />
           </div>
-          <p className="text-xs text-text-light text-center">
-            Escaneie com a câmera do celular ou pelo app do banco
-          </p>
         </div>
 
-        {/* Bank links */}
-        <div className="bg-card rounded-2xl p-5 shadow-sm">
-          <p className="text-sm font-bold text-text mb-1">Abrir meu banco</p>
-          <p className="text-xs text-text-light mb-4">
-            Acesse o app do seu banco, vá em <strong>Pix → Copia e Cola</strong> e cole o código acima.
-          </p>
-          <div className="grid grid-cols-3 gap-3">
-            {BANKS.map((bank) => (
-              <a
-                key={bank.name}
-                href={bank.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-col items-center gap-1.5 p-2 rounded-xl hover:bg-bg transition-colors"
-              >
-                <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-base font-extrabold shadow-sm"
-                  style={{ backgroundColor: bank.bg, color: bank.text }}
-                >
-                  {bank.initial}
-                </div>
-                <span className="text-xs text-text-light text-center leading-tight">{bank.name}</span>
-              </a>
-            ))}
-          </div>
-        </div>
-
-        <p className="text-center text-xs text-text-light">
-          Pagamento processado com segurança via Pix · Banco Central do Brasil
+        <p className="text-center text-xs text-text-light pb-2">
+          Pix é instantâneo e funciona em qualquer banco · Banco Central do Brasil
         </p>
+
       </main>
     </div>
   )

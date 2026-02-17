@@ -35,7 +35,7 @@ export default function Settings() {
             maxLength={25}
             value={form.nomeLoja}
             onChange={(e) => set('nomeLoja', e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+            className="w-full border border-white/10 bg-white/5 text-white placeholder:text-white/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </div>
 
@@ -50,7 +50,7 @@ export default function Settings() {
             maxLength={15}
             value={form.cidade}
             onChange={(e) => set('cidade', e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+            className="w-full border border-white/10 bg-white/5 text-white placeholder:text-white/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </div>
 
@@ -64,7 +64,7 @@ export default function Settings() {
             placeholder="Ex: meunegocio@email.com"
             value={form.chavePix}
             onChange={(e) => set('chavePix', e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+            className="w-full border border-white/10 bg-white/5 text-white placeholder:text-white/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
           />
         </div>
 

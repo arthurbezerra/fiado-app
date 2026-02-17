@@ -49,7 +49,7 @@ export default function Customers() {
             placeholder="Nome do cliente"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+            className="w-full border border-white/10 bg-white/5 text-white placeholder:text-white/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
             autoFocus
           />
           <input
@@ -57,7 +57,7 @@ export default function Customers() {
             placeholder="WhatsApp (com DDD)"
             value={telefone}
             onChange={(e) => setTelefone(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+            className="w-full border border-white/10 bg-white/5 text-white placeholder:text-white/30 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
           />
           <button
             type="submit"
@@ -73,7 +73,7 @@ export default function Customers() {
         placeholder="Buscar cliente..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-card shadow-sm"
+        className="w-full border border-white/10 bg-white/5 text-white placeholder:text-white/30 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
       />
 
       <div className="space-y-2">

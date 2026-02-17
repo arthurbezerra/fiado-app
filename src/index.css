@@ -2,16 +2,16 @@
 
 @theme {
   --font-nunito: "Nunito", sans-serif;
-  --color-navy: #1a1a2e;
-  --color-navy-light: #16213e;
-  --color-accent: #f39c12;
-  --color-accent-hover: #e67e22;
-  --color-success: #27ae60;
-  --color-danger: #e74c3c;
-  --color-bg: #f0f2f5;
-  --color-card: #ffffff;
-  --color-text: #2c3e50;
-  --color-text-light: #7f8c8d;
+  --color-navy:        #151347;
+  --color-navy-light:  #1E1C54;
+  --color-accent:      #00C4A7;
+  --color-accent-hover:#009E87;
+  --color-success:     #34D39A;
+  --color-danger:      #FF6B6B;
+  --color-bg:          #1E1C54;
+  --color-card:        #2A2870;
+  --color-text:        #FFFFFF;
+  --color-text-light:  #9895C9;
 }
 
 * {

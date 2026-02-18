@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getStats, getTopDebtors } from '../lib/store'
+import { useEmpresa } from '../lib/EmpresaContext'
+import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import Avatar from '../components/Avatar'
 import CobrancaModal from '../components/CobrancaModal'
@@ -13,9 +14,57 @@ const C = {
 }
 
 export default function Dashboard() {
-  const [stats]      = useState(() => getStats())
-  const [topDebtors] = useState(() => getTopDebtors())
-  const [cobranca, setCobranca] = useState(null)
+  const { empresaId } = useEmpresa()
+  const [clientes, setClientes]           = useState([])
+  const [totalRecebido, setTotalRecebido] = useState(0)
+  const [loading, setLoading]             = useState(true)
+  const [cobranca, setCobranca]           = useState(null)   // { cliente, openDebts }
+  const [loadingCobrarId, setLoadingCobrarId] = useState(null)
+
+  useEffect(() => {
+    if (!empresaId) { setLoading(false); return }
+
+    Promise.all([
+      api.listClientes(empresaId),
+      api.listDividas(empresaId, 'PAGO,REPASSADO'),
+    ])
+      .then(([lista, pagas]) => {
+        setClientes(lista)
+        setTotalRecebido(pagas.reduce((s, d) => s + Number(d.valor), 0))
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
+  }, [empresaId])
+
+  // Fetch full customer detail so CobrancaModal can list individual debts
+  async function handleCobrar(c) {
+    setLoadingCobrarId(c.id)
+    try {
+      const detail = await api.getCliente(c.id)
+      const openDebts = detail.dividas.filter(
+        d => d.status === 'PENDENTE' || d.status === 'AGUARDANDO_PAGAMENTO'
+      )
+      setCobranca({ cliente: detail, openDebts })
+    } catch {
+      setCobranca({ cliente: c, openDebts: [] })
+    } finally {
+      setLoadingCobrarId(null)
+    }
+  }
+
+  const totalAberto       = clientes.reduce((s, c) => s + c.totalAberto, 0)
+  const clientesComDivida = clientes.filter(c => c.totalAberto > 0).length
+  const topDebtors        = clientes
+    .filter(c => c.totalAberto > 0)
+    .sort((a, b) => b.totalAberto - a.totalAberto)
+
+  if (loading) {
+    return (
+      <div style={{ fontFamily: C.font, color: C.dim, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        Carregando...
+      </div>
+    )
+  }
 
   return (
     <div style={{ fontFamily: C.font, color: C.white, minHeight: '100vh', paddingBottom: 32 }}>
@@ -35,9 +84,9 @@ export default function Dashboard() {
       {/* ── Stats ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, padding: '0 20px 28px' }}>
         {[
-          { label: 'Em aberto', value: formatCurrency(stats.totalAberto),   color: C.red   },
-          { label: 'Recebido',  value: formatCurrency(stats.totalRecebido), color: C.green },
-          { label: 'Devedores', value: stats.clientesComDivida,             color: C.white },
+          { label: 'Em aberto', value: formatCurrency(totalAberto),   color: C.red   },
+          { label: 'Recebido',  value: formatCurrency(totalRecebido), color: C.green },
+          { label: 'Devedores', value: clientesComDivida,             color: C.white },
         ].map(({ label, value, color }) => (
           <div key={label} style={{ background: C.card, borderRadius: 18, padding: '14px 12px' }}>
             <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -82,15 +131,18 @@ export default function Dashboard() {
                   </div>
                 </Link>
                 <button
-                  onClick={() => setCobranca(c)}
+                  onClick={() => handleCobrar(c)}
+                  disabled={loadingCobrarId === c.id}
                   style={{
-                    background: C.teal, border: 'none', borderRadius: 12,
+                    background: loadingCobrarId === c.id ? 'rgba(0,196,167,0.5)' : C.teal,
+                    border: 'none', borderRadius: 12,
                     padding: '9px 16px', color: '#151347',
                     fontFamily: C.font, fontSize: 13, fontWeight: 900,
-                    cursor: 'pointer', flexShrink: 0,
+                    cursor: loadingCobrarId === c.id ? 'default' : 'pointer',
+                    flexShrink: 0,
                   }}
                 >
-                  Cobrar
+                  {loadingCobrarId === c.id ? '...' : 'Cobrar'}
                 </button>
               </div>
             ))}
@@ -100,9 +152,9 @@ export default function Dashboard() {
 
       {cobranca && (
         <CobrancaModal
-          customer={cobranca}
-          totalAberto={cobranca.totalAberto}
-          openDebts={cobranca.dividas.filter(d => !d.pago)}
+          customer={cobranca.cliente}
+          totalAberto={cobranca.cliente.totalAberto}
+          openDebts={cobranca.openDebts}
           onClose={() => setCobranca(null)}
         />
       )}

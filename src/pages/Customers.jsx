@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getCustomers, addCustomer } from '../lib/store'
+import { useEmpresa } from '../lib/EmpresaContext'
+import { api } from '../lib/api'
 import { formatCurrency } from '../lib/utils'
 import Avatar from '../components/Avatar'
 import BottomSheet from '../components/BottomSheet'
@@ -22,29 +23,47 @@ const inp = {
 }
 
 export default function Customers() {
-  const [customers, setCustomers] = useState(() => getCustomers())
-  const [showForm, setShowForm] = useState(false)
-  const [search, setSearch]     = useState('')
+  const { empresaId } = useEmpresa()
+  const [customers, setCustomers] = useState([])
+  const [showForm, setShowForm]     = useState(false)
+  const [search, setSearch]         = useState('')
   const [showSearch, setShowSearch] = useState(false)
-  const [nome, setNome]         = useState('')
-  const [telefone, setTelefone] = useState('')
+  const [nome, setNome]             = useState('')
+  const [telefone, setTelefone]     = useState('')
+  const [saving, setSaving]         = useState(false)
 
-  function handleAdd(e) {
-    e.preventDefault()
-    if (!nome.trim() || !telefone.trim()) return
-    addCustomer(nome.trim(), telefone.trim())
-    setCustomers(getCustomers())
-    setNome(''); setTelefone('')
-    setShowForm(false)
-    toast.success('Cliente adicionado!')
-  }
+  useEffect(() => {
+    if (!empresaId) return
+    api.listClientes(empresaId).then(setCustomers).catch(console.error)
+  }, [empresaId])
 
+  // Filter locally for instant feedback
   const filtered = search.trim()
     ? customers.filter(c =>
         c.nome.toLowerCase().includes(search.toLowerCase()) ||
-        c.telefone.includes(search.replace(/\D/g, ''))
+        (c.telefone ?? '').includes(search.replace(/\D/g, ''))
       )
     : customers
+
+  async function handleAdd(e) {
+    e.preventDefault()
+    if (!nome.trim() || !telefone.trim() || !empresaId) return
+    setSaving(true)
+    try {
+      const novo = await api.createCliente(empresaId, {
+        nome:     nome.trim(),
+        telefone: telefone.replace(/\D/g, ''),
+      })
+      setCustomers(prev => [...prev, { ...novo, totalAberto: 0 }])
+      setNome(''); setTelefone('')
+      setShowForm(false)
+      toast.success('Cliente adicionado!')
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div style={{ fontFamily: C.font, color: C.white, minHeight: '100vh', paddingBottom: 32 }}>
@@ -84,42 +103,39 @@ export default function Customers() {
             Nenhum cliente encontrado.
           </p>
         ) : (
-          filtered.map(c => {
-            const totalAberto = c.dividas.filter(d => !d.pago).reduce((s, d) => s + d.valor, 0)
-            return (
-              <Link
-                key={c.id}
-                to={`/clientes/${c.id}`}
-                style={{ background: C.card, borderRadius: 20, padding: '16px', display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none' }}
-              >
-                <Avatar nome={c.nome} size="md" />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: C.white, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {c.nome}
-                  </p>
-                  <p style={{ margin: '3px 0 0', fontSize: 13, color: C.dim }}>
-                    {c.telefone}
-                  </p>
-                </div>
-                {totalAberto > 0 ? (
-                  <span style={{ fontSize: 15, fontWeight: 900, color: C.red, flexShrink: 0 }}>
-                    {formatCurrency(totalAberto)}
-                  </span>
-                ) : (
-                  <span style={{
-                    fontSize: 11, fontWeight: 800, color: C.green,
-                    background: 'rgba(52,211,154,0.15)', borderRadius: 20,
-                    padding: '5px 10px', flexShrink: 0,
-                  }}>
-                    Em dia
-                  </span>
-                )}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2.5" strokeLinecap="round">
-                  <path d="M9 18l6-6-6-6" />
-                </svg>
-              </Link>
-            )
-          })
+          filtered.map(c => (
+            <Link
+              key={c.id}
+              to={`/clientes/${c.id}`}
+              style={{ background: C.card, borderRadius: 20, padding: '16px', display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none' }}
+            >
+              <Avatar nome={c.nome} size="md" />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: 16, fontWeight: 800, color: C.white, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {c.nome}
+                </p>
+                <p style={{ margin: '3px 0 0', fontSize: 13, color: C.dim }}>
+                  {c.telefone ?? ''}
+                </p>
+              </div>
+              {c.totalAberto > 0 ? (
+                <span style={{ fontSize: 15, fontWeight: 900, color: C.red, flexShrink: 0 }}>
+                  {formatCurrency(c.totalAberto)}
+                </span>
+              ) : (
+                <span style={{
+                  fontSize: 11, fontWeight: 800, color: C.green,
+                  background: 'rgba(52,211,154,0.15)', borderRadius: 20,
+                  padding: '5px 10px', flexShrink: 0,
+                }}>
+                  Em dia
+                </span>
+              )}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </Link>
+          ))
         )}
       </div>
 
@@ -152,13 +168,16 @@ export default function Customers() {
               type="tel" placeholder="WhatsApp com DDD" value={telefone}
               onChange={e => setTelefone(e.target.value)} style={inp}
             />
-            <button type="submit" style={{
-              width: '100%', background: C.teal, border: 'none', borderRadius: 16,
+            <button type="submit" disabled={saving} style={{
+              width: '100%',
+              background: saving ? 'rgba(0,196,167,0.5)' : C.teal,
+              border: 'none', borderRadius: 16,
               padding: '18px', color: '#151347', fontFamily: C.font,
-              fontSize: 17, fontWeight: 900, cursor: 'pointer',
+              fontSize: 17, fontWeight: 900,
+              cursor: saving ? 'default' : 'pointer',
               boxShadow: '0 6px 24px rgba(0,196,167,0.3)', marginTop: 4,
             }}>
-              Adicionar Cliente
+              {saving ? 'Adicionando...' : 'Adicionar Cliente'}
             </button>
           </form>
         </BottomSheet>

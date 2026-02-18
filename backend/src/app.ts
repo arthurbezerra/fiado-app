@@ -1,6 +1,10 @@
 import Fastify from 'fastify';
+import cors from '@fastify/cors';
 import { pixRoutes } from './routes/pix.routes';
 import { webhookRoutes } from './routes/webhook.routes';
+import { empresaRoutes } from './routes/empresa.routes';
+import { clienteRoutes } from './routes/cliente.routes';
+import { dividaRoutes } from './routes/divida.routes';
 
 export function buildApp() {
   const app = Fastify({
@@ -37,7 +41,16 @@ export function buildApp() {
     });
   });
 
+  // CORS — permite chamadas do app web/WebView
+  app.register(cors, {
+    origin: process.env.CORS_ORIGIN ?? true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  });
+
   // Rotas
+  app.register(empresaRoutes);
+  app.register(clienteRoutes);
+  app.register(dividaRoutes);
   app.register(pixRoutes);
   app.register(webhookRoutes);
 

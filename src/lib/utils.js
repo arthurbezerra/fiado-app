@@ -5,8 +5,9 @@ export function formatCurrency(value) {
   })
 }
 
-export function formatDate(isoDate) {
-  const [year, month, day] = isoDate.split('-')
+export function formatDate(isoDateOrDatetime) {
+  // Works with both '2024-01-15' and '2024-01-15T10:30:00.000Z'
+  const [year, month, day] = String(isoDateOrDatetime).slice(0, 10).split('-')
   return `${day}/${month}/${year}`
 }
 

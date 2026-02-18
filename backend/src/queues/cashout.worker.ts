@@ -1,6 +1,6 @@
 import { Worker, Job } from 'bullmq';
 import { PrismaClient, CashoutStatus } from '@prisma/client';
-import { redis } from '../lib/redis';
+import { getBullMQConnection } from '../lib/redis';
 import { createInterClient } from '../lib/inter-client';
 import { CashoutJobData } from './cashout.queue';
 
@@ -137,7 +137,7 @@ async function processCashout(job: Job<CashoutJobData>): Promise<void> {
 // ─── Worker ───────────────────────────────────────────────────────────────────
 
 export const cashoutWorker = new Worker<CashoutJobData>('cashout', processCashout, {
-  connection: redis,
+  connection: getBullMQConnection(),
   concurrency: 5,
 });
 

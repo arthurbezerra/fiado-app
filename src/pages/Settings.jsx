@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { getSettings, saveSettings } from '../lib/store'
+import { useEffect, useState } from 'react'
+import { useEmpresa } from '../lib/EmpresaContext'
 import toast from 'react-hot-toast'
 
 const C = {
@@ -18,20 +18,39 @@ const inp = {
 
 const fields = [
   { key: 'nomeLoja', label: 'Nome da loja', placeholder: 'Ex: Mercadinho da Dona Maria', hint: 'Aparece no link de pagamento e na mensagem do WhatsApp.', max: 25 },
-  { key: 'cidade',  label: 'Cidade',       placeholder: 'Ex: São Paulo',               hint: 'Usada no QR Code Pix (exigência do Banco Central).', max: 15 },
-  { key: 'chavePix',label: 'Chave Pix',    placeholder: 'Ex: meunegocio@email.com',     hint: 'CPF, e-mail, telefone ou chave aleatória.' },
+  { key: 'cidade',   label: 'Cidade',       placeholder: 'Ex: São Paulo',               hint: 'Usada no QR Code Pix (exigência do Banco Central).', max: 15 },
+  { key: 'chavePix', label: 'Chave Pix',    placeholder: 'Ex: meunegocio@email.com',     hint: 'CPF, e-mail, telefone ou chave aleatória.' },
 ]
 
 export default function Settings() {
-  const [form, setForm] = useState(() => {
-    const s = getSettings()
-    return { chavePix: s.chavePix, nomeLoja: s.nomeLoja, cidade: s.cidade }
-  })
+  const { empresa, settings, saveEmpresaSettings } = useEmpresa()
+  const [form, setForm] = useState({ nomeLoja: '', cidade: '', chavePix: '' })
+  const [saving, setSaving] = useState(false)
 
-  function handleSave(e) {
+  // Populate form once empresa data arrives from backend
+  useEffect(() => {
+    setForm({
+      nomeLoja: settings.nomeLoja,
+      cidade:   settings.cidade,
+      chavePix: settings.chavePix,
+    })
+  }, [empresa, settings.cidade])
+
+  async function handleSave(e) {
     e.preventDefault()
-    saveSettings({ chavePix: form.chavePix.trim(), nomeLoja: form.nomeLoja.trim(), cidade: form.cidade.trim() })
-    toast.success('Configurações salvas!')
+    setSaving(true)
+    try {
+      await saveEmpresaSettings({
+        nome:    form.nomeLoja.trim(),
+        pixKey:  form.chavePix.trim(),
+        cidade:  form.cidade.trim(),
+      })
+      toast.success('Configurações salvas!')
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -63,14 +82,17 @@ export default function Settings() {
 
         <button
           type="submit"
+          disabled={saving}
           style={{
-            background: C.teal, border: 'none', borderRadius: 16,
+            background: saving ? 'rgba(0,196,167,0.5)' : C.teal,
+            border: 'none', borderRadius: 16,
             padding: '18px', color: '#151347', fontFamily: C.font,
-            fontSize: 17, fontWeight: 900, cursor: 'pointer',
+            fontSize: 17, fontWeight: 900,
+            cursor: saving ? 'default' : 'pointer',
             boxShadow: '0 6px 24px rgba(0,196,167,0.3)',
           }}
         >
-          Salvar
+          {saving ? 'Salvando...' : 'Salvar'}
         </button>
       </form>
     </div>

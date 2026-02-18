@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
+import { EmpresaProvider } from './lib/EmpresaContext'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import Customers from './pages/Customers'
@@ -9,6 +10,7 @@ import PagamentoPage from './pages/PagamentoPage'
 
 function App() {
   return (
+    <EmpresaProvider>
     <BrowserRouter>
       <Toaster
         position="top-center"
@@ -31,6 +33,7 @@ function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </EmpresaProvider>
   )
 }
 

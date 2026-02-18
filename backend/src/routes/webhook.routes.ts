@@ -1,10 +1,10 @@
 import { FastifyInstance } from 'fastify';
-import { handlePixWebhook } from '../controllers/webhook.controller';
+import { handlePixWebhook, WebhookBody } from '../controllers/webhook.controller';
 
 export async function webhookRoutes(app: FastifyInstance) {
   // O secret no path é uma camada de segurança básica.
   // O Inter também pode ser configurado para usar mTLS no webhook (mais seguro).
-  app.post<{ Params: { secret: string } }>(
+  app.post<{ Params: { secret: string }; Body: WebhookBody }>(
     '/webhook/pix/:secret',
     {
       schema: {

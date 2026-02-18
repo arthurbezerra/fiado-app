@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { cashoutQueue } from '../queues/cashout.queue';
 
 const prisma = new PrismaClient();
@@ -20,7 +20,7 @@ interface PixEvent {
   };
 }
 
-interface WebhookBody {
+export interface WebhookBody {
   pix?: PixEvent[];
 }
 
@@ -95,8 +95,8 @@ async function processPixEvent(event: PixEvent, log: FastifyRequest['log']): Pro
         tipo: 'PAGAMENTO_RECEBIDO',
         status: 'CONCLUIDA',
         valor: valorRecebido,
-        pagador: event.pagador ?? null,
-        payload: event,
+        pagador: event.pagador ? (event.pagador as unknown as Prisma.InputJsonValue) : Prisma.JsonNull,
+        payload: event as unknown as Prisma.InputJsonValue,
       },
     }),
   ]);

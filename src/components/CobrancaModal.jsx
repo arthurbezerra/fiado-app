@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getSettings } from '../lib/store'
+import { useEmpresa } from '../lib/EmpresaContext'
 import { buildWhatsAppMessage, buildWhatsAppUrl, buildPaymentLink, formatCurrency } from '../lib/utils'
 
 const C = {
@@ -10,7 +10,7 @@ const C = {
 
 export default function CobrancaModal({ customer, totalAberto, openDebts = [], onClose }) {
   const [linkCopied, setLinkCopied] = useState(false)
-  const settings  = getSettings()
+  const { settings } = useEmpresa()
   const hasPixKey = Boolean(settings.chavePix)
   const paymentLink = hasPixKey ? buildPaymentLink(customer, totalAberto, settings) : ''
   const message   = buildWhatsAppMessage(customer.nome, totalAberto, openDebts, paymentLink)

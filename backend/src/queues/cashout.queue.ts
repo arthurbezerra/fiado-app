@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import { redis } from '../lib/redis';
+import { getBullMQConnection } from '../lib/redis';
 
 export interface CashoutJobData {
   cobrancaId: string;
@@ -11,7 +11,7 @@ export interface CashoutJobData {
 }
 
 export const cashoutQueue = new Queue<CashoutJobData>('cashout', {
-  connection: redis,
+  connection: getBullMQConnection(),
   defaultJobOptions: {
     attempts: 5,
     backoff: {

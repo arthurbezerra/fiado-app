@@ -55,9 +55,11 @@ export async function createPixCharge(input: CreateChargeInput) {
   const qrResponse = await client.get(`/pix/v2/loc/${cob.loc.id}/qrcode`);
   const { qrcode: pixCopiaECola, imagemQrcode } = qrResponse.data;
 
-  // Persiste a cobrança e registra o evento de auditoria em uma transação atômica
-  const [cobranca] = await prisma.$transaction([
-    prisma.cobrancaPix.create({
+  // Persiste a cobrança e registra o evento de auditoria em uma transação atômica.
+  // Usamos transação interativa para que o ID da CobrancaPix esteja disponível
+  // ao criar o registro de auditoria (TransacaoPix) — evita FK inválida.
+  const cobranca = await prisma.$transaction(async (tx) => {
+    const created = await tx.cobrancaPix.create({
       data: {
         dividaId,
         empresaId,
@@ -70,27 +72,25 @@ export async function createPixCharge(input: CreateChargeInput) {
         status: 'ATIVA',
         expiracao: new Date(Date.now() + expiracaoSegundos * 1_000),
       },
-    }),
-    prisma.transacaoPix.create({
+    });
+
+    await tx.transacaoPix.create({
       data: {
-        cobrancaId: '', // será preenchido abaixo após o create
+        cobrancaId: created.id,
         txid,
         tipo: 'COBRANCA_CRIADA',
         status: cob.status,
         valor,
         payload: cob,
       },
-    }),
-    prisma.divida.update({
+    });
+
+    await tx.divida.update({
       where: { id: dividaId },
       data: { status: 'AGUARDANDO_PAGAMENTO' },
-    }),
-  ]);
+    });
 
-  // Vincula a transação de auditoria à cobrança criada
-  await prisma.transacaoPix.updateMany({
-    where: { txid, tipo: 'COBRANCA_CRIADA', cobrancaId: '' },
-    data: { cobrancaId: cobranca.id },
+    return created;
   });
 
   return {

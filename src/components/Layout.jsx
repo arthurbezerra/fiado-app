@@ -46,6 +46,7 @@ export default function Layout() {
       position: 'relative',
       display: 'flex',
       flexDirection: 'column',
+      paddingTop: 'env(safe-area-inset-top)',
     }}>
       <main style={{ flex: 1, paddingBottom: 72 }}>
         <Outlet />
@@ -62,6 +63,7 @@ export default function Layout() {
         display: 'flex',
         borderTop: '1px solid rgba(255,255,255,0.07)',
         zIndex: 40,
+        paddingBottom: 'env(safe-area-inset-bottom)',
       }}>
         {TABS.map(({ to, label, Icon, end }) => (
           <NavLink key={to} to={to} end={end} style={{ flex: 1, textDecoration: 'none' }}>

@@ -1,0 +1,33 @@
+{
+  "name": "fiado-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "dev:worker": "tsx watch src/worker.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "start:worker": "node dist/worker.js",
+    "db:migrate": "prisma migrate deploy",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio",
+    "setup:webhook": "tsx src/scripts/setup-webhook.ts"
+  },
+  "dependencies": {
+    "@fastify/formbody": "^7.4.0",
+    "@prisma/client": "^5.16.0",
+    "axios": "^1.7.2",
+    "bullmq": "^5.12.0",
+    "fastify": "^4.28.0",
+    "ioredis": "^5.4.1",
+    "pino": "^9.3.2",
+    "qs": "^6.12.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/qs": "^6.9.15",
+    "prisma": "^5.16.0",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3"
+  }
+}

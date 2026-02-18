@@ -25,6 +25,7 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text);
   min-height: 100vh;
+  overscroll-behavior-y: none;
 }
 
 #root {

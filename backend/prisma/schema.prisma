@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Empresa (Credor / Cliente do SaaS) ──────────────────────────────────────
+
+model Empresa {
+  id        String   @id @default(cuid())
+  nome      String
+  cnpj      String?  @unique
+  pixKey    String   // Chave Pix do lojista para receber repasses
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clientes  Cliente[]
+  dividas   Divida[]
+  cobrancas CobrancaPix[]
+}
+
+// ─── Cliente (Devedor) ────────────────────────────────────────────────────────
+
+model Cliente {
+  id        String   @id @default(cuid())
+  empresaId String
+  nome      String
+  telefone  String?
+  cpf       String?
+  createdAt DateTime @default(now())
+
+  empresa   Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  dividas   Divida[]
+}
+
+// ─── Dívida ───────────────────────────────────────────────────────────────────
+
+model Divida {
+  id        String       @id @default(cuid())
+  empresaId String
+  clienteId String
+  valor     Decimal      @db.Decimal(10, 2)
+  descricao String
+  status    DividaStatus @default(PENDENTE)
+  paidAt    DateTime?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  empresa   Empresa     @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  cliente   Cliente     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  cobranca  CobrancaPix?
+}
+
+enum DividaStatus {
+  PENDENTE
+  AGUARDANDO_PAGAMENTO
+  PAGO
+  REPASSADO
+}
+
+// ─── Cobrança Pix (QR Code Dinâmico no Inter) ────────────────────────────────
+
+model CobrancaPix {
+  id            String         @id @default(cuid())
+  dividaId      String         @unique
+  empresaId     String
+  txid          String         @unique // ID único enviado ao Inter (26-35 chars)
+  locId         Int            // ID do LOC retornado pelo Inter
+  loc           String         // Location URL
+  pixCopiaECola String?        // Brcode completo para copiar e colar
+  qrCodeBase64  String?        // Imagem base64 do QR code
+  valor         Decimal        @db.Decimal(10, 2)
+  status        CobrancaStatus @default(ATIVA)
+  expiracao     DateTime
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  divida      Divida         @relation(fields: [dividaId], references: [id], onDelete: Cascade)
+  empresa     Empresa        @relation(fields: [empresaId], references: [id])
+  transacoes  TransacaoPix[]
+  cashout     Cashout?
+}
+
+enum CobrancaStatus {
+  ATIVA
+  CONCLUIDA
+  EXPIRADA
+  REMOVIDA
+}
+
+// ─── Auditoria de Transações Pix ─────────────────────────────────────────────
+
+model TransacaoPix {
+  id         String          @id @default(cuid())
+  cobrancaId String
+  txid       String          // txid do Inter ou chave de referência interna
+  e2eId      String?         // End-to-End ID do Banco Central (Pix recebido/enviado)
+  tipo       TipoTransacao
+  status     String
+  valor      Decimal?        @db.Decimal(10, 2)
+  pagador    Json?           // Dados do pagador (CPF/CNPJ + nome)
+  payload    Json            // Payload bruto do evento (webhook ou resposta API)
+  createdAt  DateTime        @default(now())
+
+  cobranca   CobrancaPix     @relation(fields: [cobrancaId], references: [id])
+
+  @@index([txid])
+  @@index([e2eId])
+  @@index([cobrancaId])
+}
+
+enum TipoTransacao {
+  COBRANCA_CRIADA
+  PAGAMENTO_RECEBIDO
+  REPASSE_INICIADO
+  REPASSE_CONCLUIDO
+  REPASSE_FALHOU
+}
+
+// ─── Cashout (Repasse ao Lojista) ─────────────────────────────────────────────
+
+model Cashout {
+  id              String        @id @default(cuid())
+  cobrancaId      String        @unique
+  idempotencyKey  String        @unique // Garante que o repasse nunca é duplicado
+  valor           Decimal       @db.Decimal(10, 2) // Valor após desconto da taxa
+  taxa            Decimal       @db.Decimal(10, 2) // Taxa da plataforma retida
+  pixKeyDestino   String        // Chave Pix do lojista
+  status          CashoutStatus @default(PENDENTE)
+  endToEndId      String?       // E2E ID do Pix enviado (preenchido após sucesso)
+  tentativas      Int           @default(0)
+  erroMensagem    String?
+  processadoAt    DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  cobranca        CobrancaPix   @relation(fields: [cobrancaId], references: [id])
+}
+
+enum CashoutStatus {
+  PENDENTE
+  PROCESSANDO
+  CONCLUIDO
+  FALHOU
+}
